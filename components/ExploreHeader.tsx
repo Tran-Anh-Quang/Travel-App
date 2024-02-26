@@ -67,7 +67,7 @@ const ExploreHeader = ({ onCategoryChanged }: Props) => {
                             <Ionicons name='search' size={24} />
                             <View>
                                 <Text style={{ fontFamily: 'mon-sb'}}>Where to?</Text>
-                                <Text style={{ fontFamily: 'mon', color: Colors.grey}}>Anywhere & Any Week</Text>
+                                <Text style={{ fontFamily: 'mon', color: Colors.grey}}>Anywhere &middot; Any Week</Text>
                             </View>
                         </TouchableOpacity>
                     </Link>

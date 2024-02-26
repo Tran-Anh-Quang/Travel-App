@@ -80,7 +80,7 @@ function RootLayoutNav() {
 
   return (
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{headerTitle: 'Back', headerShown: false }} />
         <Stack.Screen 
           name='(modals)/login' 
           options={{
