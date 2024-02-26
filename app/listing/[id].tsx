@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, Dimensions, Image } from 'react-native'
-import React from 'react'
-import { useLocalSearchParams } from 'expo-router'
+import { View, Text, StyleSheet, Dimensions, Image, Share } from 'react-native'
+import React, { useLayoutEffect } from 'react'
+import { useLocalSearchParams, useNavigation } from 'expo-router'
 import listingsData from '@/assets/data/airbnb-listings@public.json'
-import Animated, { SlideInDown } from 'react-native-reanimated';
+import Animated, { SlideInDown, interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset } from 'react-native-reanimated';
 import { Listing } from '../interfaces/listing';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
@@ -15,10 +15,82 @@ const { width} = Dimensions.get('window');
 const Page = () => {
     const { id } = useLocalSearchParams<{ id: string }> ();
     const listing: Listing = (listingsData as any[]).find((item) => item.id === id);
+    const scrollRef = useAnimatedRef<Animated.ScrollView>();
+    const navigation = useNavigation();
+
+    const scrollOffset = useScrollViewOffset(scrollRef);
+
+    const shareListing = async() => {
+      try {
+        await Share.share({
+          title: listing.name,
+          url: listing.listing_url,
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    useLayoutEffect(() => {
+      navigation.setOptions({
+        headerBackground: () => (
+          <Animated.View style={[headerAnimatedStyle, styles.header]}/>
+        ),
+        headerRight: () => (
+          <View style={styles.bar}>
+            <TouchableOpacity style={styles.roundButton} onPress={shareListing}>
+              <Ionicons name='share-outline' size={22} color={'#000'} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.roundButton}>
+              <Ionicons name='heart-outline' size={22} color={'#000'} />
+            </TouchableOpacity>
+          </View>
+        ),
+        headerLeft: () => (
+          <TouchableOpacity style={styles.roundButton} onPress={() => navigation.goBack()}>
+            <Ionicons name='chevron-back' size={24} color={'#000'} />
+          </TouchableOpacity>
+        ),
+      });
+    }, []);
+    
+    const imageAnimatedStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          {
+            translateY: interpolate(
+              scrollOffset.value,
+              [-IMG_HEIGHT, 0, IMG_HEIGHT],
+              [-IMG_HEIGHT /2, 0, IMG_HEIGHT * 0.75]
+            ),
+          },
+          {
+            scale: interpolate (
+              scrollOffset.value,
+              [-IMG_HEIGHT, 0, IMG_HEIGHT],
+              [2, 1, 1]
+              )
+          }
+        ]
+      }
+    });
+
+    const headerAnimatedStyle = useAnimatedStyle(() => {
+      return {
+        opacity: interpolate(
+          scrollOffset.value,
+          [0, IMG_HEIGHT / 1.5],
+          [0, 1]
+        )
+      };
+    });
+
   return (
     <View style={styles.container}>
-      <Animated.ScrollView>
-        <Animated.Image source={{ uri: listing.xl_picture_url }} style={styles.image}/>
+      <Animated.ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 100}}
+      scrollEventThrottle={16}>
+        <Animated.Image source={{ uri: listing.xl_picture_url }} style={[styles.image, imageAnimatedStyle]}/>
 
         <View style={styles.infoContainer}>
           <Text style={styles.name}>{listing.name}</Text>
@@ -42,7 +114,7 @@ const Page = () => {
           <View style={styles.divider} />
 
           <View style={styles.hostView}>
-            <Image source={{ uri: listing.host_picture_url}} style={styles.host} />
+            <Image source={{ uri: listing.host_picture_url }} style={styles.host} />
 
             <View>
               <Text style={{ fontWeight: '500', fontSize: 16}}>Hosted by {listing.host_name}</Text>
@@ -136,6 +208,29 @@ const styles = StyleSheet.create({
   footerPrice: {
     fontSize: 18,
     fontFamily: 'mon-sb',
+  },
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  roundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 50,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: Colors.primary,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.grey,
+  },
+  header: {
+    backgroundColor: '#fff',
+    height: 100,
+    borderBlockColor: Colors.grey,
+    borderWidth: StyleSheet.hairlineWidth,
   },
 });
 
